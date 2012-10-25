@@ -7,10 +7,11 @@ from gurobipy import GurobiError, Model
 # many possible workarounds, in which we store instance attributes
 # that are not part of the Cython API on a proxy object.
 
-class ProxyModel(Model):
+class ProxyModel(type):
     '''A Gurobi `Model` that allows arbitary attributes on subclasses.'''
     def __new__(cls, *args, **kwds):
-        Model.__new__(cls, *args, **kwds)
+        print *args, **kwds
+        type.__new__(cls, *args, **kwds)
         cls.PROXY = {}
 
     def __init__(self, *args, **kwds):

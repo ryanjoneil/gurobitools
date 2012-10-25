@@ -1,6 +1,9 @@
-from or782.model import ProxyModel
+from gurobipy import Model
+from or782.model import AttributeProxy
 
-class LRModel(ProxyModel):
+class LRModel(Model):
+    __metaclass__ = AttributeProxyModel
+
     # This is ridiculous.
     ATTR = {
         'penalties': {},

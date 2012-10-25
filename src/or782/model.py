@@ -1,4 +1,4 @@
-from gurobipy import GurobiError, Model
+from gurobipy import Model
 
 # I'm not sure exactly why. Maybe it's because Model is written in
 # Cython, or perhaps Gurobi is doing something to error out on invalid
@@ -7,32 +7,32 @@ from gurobipy import GurobiError, Model
 # many possible workarounds, in which we store instance attributes
 # that are not part of the Cython API on a proxy object.
 
-class ProxyModel(type):
+class Proxy(object):
+    pass
+
+class ProxyModel(Model):
     '''A Gurobi `Model` that allows arbitary attributes on subclasses.'''
-    def __new__(cls, *args, **kwds):
-        print *args, **kwds
-        type.__new__(cls, *args, **kwds)
-        cls.PROXY = {}
+    PROXY = {}
 
     def __init__(self, *args, **kwds):
         # Create a proxy object on which to store extra attributes.
-        type(self).PROXY[self] = object()
-        super(ProxyModel, self).__init__(self, *args, **kwds)
+        ProxyModel.PROXY[self] = Proxy()
+        super(ProxyModel, self).__init__(*args, **kwds)
 
     def __getattr__(self, attr):
         try:
-            return super(LRModel, self).__getattr__(attr)
-        except GurobiError, ge:
+            return super(ProxyModel, self).__getattr__(attr)
+        except Exception, e:
             try:
-                return getattr(ProxyModel[self], attr)
+                return getattr(ProxyModel.PROXY[self], attr)
             except AttributeError:
-                raise ge
+                raise e
 
     def __setattr__(self, attr, value):
         try:
-            return super(LRModel, self).__setattr__(attr, value)
-        except GurobiError, ge:
+            return super(ProxyModel, self).__setattr__(attr, value)
+        except Exception, e:
             try:
-                return setattr(ProxyModel[self], attr, value)
+                return setattr(ProxyModel.PROXY[self], attr, value)
             except AttributeError:
-                raise ge
+                raise e

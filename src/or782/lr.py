@@ -1,8 +1,6 @@
-from gurobipy import Model
-from or782.model import AttributeProxy
+from or782.model import ProxyModel
 
-class LRModel(Model):
-    __metaclass__ = AttributeProxyModel
+class LRModel(ProxyModel):
 
     # This is ridiculous.
     ATTR = {
@@ -23,9 +21,5 @@ class LRModel(Model):
         objective function accordingly.
         '''
         # TODO: make this accept the non-TempConstr args
-        print temp_constr
-        print dir(temp_constr)
-        import sys
-        sys.exit()
-
+        return self.addConstr(temp_constr)
 

@@ -91,12 +91,15 @@ class LRModel(ProxyModel):
                 self.step_size = 1.0 / self.denominator
                 self.denominator += 1
 
+            yield self
+
+            # Stopping criteria
+            if self.primal_feasible() and self.complementary_slackness():
+                raise StopIteration
+
             # Always update multipliers
             for pc in penalty_cons:
                 self.multipliers[pc] -= self.step_size * self.penalties[pc].x
-
-            # TODO: test for stopping criteria
-            yield self
 
         self.setObjective(self.default_objective)
 
@@ -107,9 +110,9 @@ class LRModel(ProxyModel):
         constraints were of the the following forms, they are subject to the
         corresponding tests:
 
-            expr <= rhs     ->      expr <= rhs + epsilon
-            expr == rhs     ->      rhs - epsilon <= expr <= rhs + epsilon
-            expr >= rhs     ->      expr >= rhs - epsilon
+            lhs <= rhs     ->      lhs <= rhs + epsilon
+            lhs == rhs     ->      rhs - epsilon <= lhs <= rhs + epsilon
+            lhs >= rhs     ->      lhs >= rhs - epsilon
 
         Return True if the current solution is primal feasible, False if not.
         '''
@@ -137,8 +140,9 @@ class LRModel(ProxyModel):
                 return False
             elif sense == '>' and lhs_val < rhs_val - eps:
                 return False
-            elif lhs_val < rhs_val - eps or lhs_val > rhs_val + eps:
-                return False
+            elif sense == '=':
+                if lhs_val < rhs_val - eps or lhs_val > rhs_val + eps:
+                    return False
 
         return True
 
@@ -152,9 +156,8 @@ class LRModel(ProxyModel):
         conditions for all dualized constraints, False otherwise.
         '''
         for pc in self.penalties:
-            if abs(self.multipliers[pc]) > self.epsilon:
-                return False
-            elif abs(self.penalties[pc].x) > self.epsilon:
+            if abs(self.multipliers[pc]) > self.epsilon and \
+               abs(self.penalties[pc].x) > self.epsilon:
                 return False
 
         return True

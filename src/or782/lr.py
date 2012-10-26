@@ -4,11 +4,21 @@ from or782.model import ProxyModel
 class LRModel(ProxyModel):
     def __init__(self, *args, **kwds):
         super(LRModel, self).__init__(*args, **kwds)
+
         self.penalties = {}
         self.multipliers = {}
-        self.default_multiplier = 2.0
-        self.start_step_size = 5.0
+
+        self.max_iterations = 25#10000
+        self.update_iterations = 10
         self.epsilon = 10e-6
+
+        self.iteration = 0
+        self.denominator = 0
+        self.step_size = 0
+
+        self.default_multiplier = 2.0
+        self.start_denominator = 1.0
+        self.start_step_size = 10.0
 
     def addLRConstr(self, temp_constr):
         '''
@@ -47,41 +57,42 @@ class LRModel(ProxyModel):
         '''
         self.default_objective = expr
 
-    def optimize(self, max_iterations=10):
+    def optimize(self):
         # TODO: docs
-        # Copy the objective function into another expression so we can
-        # play with it.
+
+        # Penalty variables & multipliers are indexed by penalty constraints.
         penalty_cons = self.penalties.keys()
 
+        # Start values for multipliers and other things.
         self.multipliers = {pc: self.default_multiplier for pc in penalty_cons}
+        self.denominator = self.start_denominator
+        self.step_size = self.start_step_size
 
-        denom = 1
-        s = 10.0
-        for i in xrange(max_iterations):
+        for i in xrange(self.max_iterations):
+            self.iteration = i+1
+
+            # Add the LR multipliers and penalties to the objective function.
             lr_objective = self.default_objective + 0
             for j, pc in enumerate(penalty_cons):
-                lr_objective = lr_objective + self.multipliers[pc] * self.penalties[pc]
+                multiplier = self.multipliers[pc]
+                penalty = self.penalties[pc]
+                lr_objective = lr_objective + multiplier * penalty
 
+            # Set the altered objective and optimize.
             super(LRModel, self).setObjective(lr_objective)
             super(LRModel, self).optimize()
 
-            print 'iteration', i, 'obj =', '%.02f' % self.objVal, '| u =', \
-                ' '.join(['%.02f' % self.multipliers[pc] for pc in penalty_cons]), \
-                '| penalties =', \
-                ' '.join(['%.2f' % self.penalties[pc].x for pc in penalty_cons])
-
-            # Only update step size every 100 iterations
-            if not i % 10:
-                s = 1.0 / denom
-                denom += 1
+            # Only update step size every n iterations.
+            if not i % self.update_iterations:
+                self.step_size = self.step_size / self.denominator
+                self.denominator += 1
 
             # Always update multipliers
             for pc in penalty_cons:
-                self.multipliers[pc] -= s*(self.penalties[pc].x)
+                self.multipliers[pc] -= self.step_size * self.penalties[pc].x
+
+            # TODO: test for stopping criteria
+            yield self
 
         self.setObjective(self.default_objective)
-
-
-        # default multpliers...
-        # step size
 

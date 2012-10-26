@@ -62,7 +62,7 @@ class LRModel(ProxyModel):
             for j, pc in enumerate(penalty_cons):
                 lr_objective = lr_objective + self.multipliers[pc] * self.penalties[pc]
 
-            self.setObjective(lr_objective)
+            super(LRModel, slef).setObjective(lr_objective)
             super(LRModel, self).optimize()
 
             print 'iteration', i, 'obj =', '%.02f' % self.objVal, '| u =', \

@@ -8,7 +8,7 @@ class LRModel(ProxyModel):
         self.penalties = {}
         self.multipliers = {}
 
-        self.max_iterations = 25#10000
+        self.max_iterations = 100
         self.update_iterations = 10
         self.epsilon = 10e-6
 
@@ -18,7 +18,7 @@ class LRModel(ProxyModel):
 
         self.default_multiplier = 2.0
         self.start_denominator = 1.0
-        self.start_step_size = 10.0
+        self.start_step_size = 1.0
 
     def addLRConstr(self, temp_constr):
         '''
@@ -84,7 +84,7 @@ class LRModel(ProxyModel):
 
             # Only update step size every n iterations.
             if not i % self.update_iterations:
-                self.step_size = self.step_size / self.denominator
+                self.step_size = 1.0 / self.denominator
                 self.denominator += 1
 
             # Always update multipliers

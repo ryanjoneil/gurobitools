@@ -1,0 +1,72 @@
+#!/usr/bin/env python
+
+from gurobipy import read, readParams
+from gurobitools import LRModel
+from gurobitools.model import copy_model
+from optparse import OptionParser
+import re
+
+if __name__ == '__main__':
+    # Set up command line options.
+    parser = OptionParser()
+    parser.add_option(
+        '-f', '--file',
+        dest = 'file',
+        metavar = 'FILE',
+        help = 'model file in LP or MPS format'
+    )
+    parser.add_option(
+        '-c', '--cons',
+        dest = 'cons',
+        metavar = 'CONS',
+        help = 'comma-separated list of constraints regexes ' \
+               'to dualize (examples: -c c1_1,c1,2 or -c c1_.*)'
+    )
+    parser.add_option(
+        '-p', '--params',
+        dest = 'params',
+        metavar = 'PARAMS',
+        help = 'Gurobi parameters file (optional)'
+    )
+
+    # Get and check command line options.
+    (options, args) = parser.parse_args()
+
+    if not options.file:
+        parser.error('model file required')
+
+    constraints = filter(None, (options.cons or '').split(','))
+    if not constraints:
+        parser.error('at least one constraint must be dualized')
+
+    # Read parameter file if one is given
+    if options.params:
+        readParams(options.params)
+
+    # Turn constraint strings into regular expressions.
+    const_re = [re.compile(c) for c in constraints]
+
+    # Now load the model and dualize all the matching constraints.
+    model = read(options.file)
+    lr_model = copy_model(model, LRModel)
+
+    for c in lr_model.getConstrs():
+        for c_re in const_re:
+            if c_re.match(c.constrName):
+                lr_model.remove(c)
+
+                # We can't get the original linear expression of the Model,
+                # so we have to reconstruct it to dualize the constraint.
+                # There should be a better way to do this... (?)
+                expr = 0
+                for v in lr_model.getVars():
+                    coeff = lr_model.getCoeff(c, v)
+                    if coeff:
+                        expr += coeff * v
+                if expr:
+                    lr_model.addLRConstr(expr)
+
+    # And optimize.
+    lr_model.optimize()
+    print lr_model.objVal
+

@@ -3,7 +3,7 @@ from distutils.core import setup
 setup (
     name         = 'gurobitools',
     version      = '0.0.1',
-    description  = 'Extensions for doing advanced IP with gurobipy',
+    description  = 'Extensions for some advanced IP techniques with gurobipy',
     author       = "Ryan J. O'Neil",
     author_email = 'ryanjoneil@gmail.com',
     url          = 'http://bitbucket.org/ryanjoneil/gurobitools',

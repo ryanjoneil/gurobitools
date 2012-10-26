@@ -1,3 +1,3 @@
-from or782.lr import LRModel
+from gurobitools.lr import LRModel
 
 __all__ = ('LRModel',)

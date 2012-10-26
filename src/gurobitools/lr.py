@@ -1,5 +1,5 @@
 from gurobipy import GRB
-from or782.model import ProxyModel
+from gurobitools.model import ProxyModel
 
 class LRModel(ProxyModel):
     def __init__(self, *args, **kwds):

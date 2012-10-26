@@ -3,7 +3,7 @@
 # This is the GAP per Wolsey, pg 182
 
 from gurobipy import GRB
-from or782 import LRModel
+from gurobitools import LRModel
 
 model = LRModel('GAP per Wolsey')
 model.modelSense = GRB.MAXIMIZE

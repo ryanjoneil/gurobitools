@@ -55,7 +55,8 @@ model.setObjective(
 for m in model.LRoptimize():
     print 'iteration', model.iteration, 'obj =', '%.02f' % model.objVal, \
           '| u =', ' '.join(['%.02f' % u for u in model.multipliers.values()]), \
-          '| penalties =', ' '.join(['%.2f' % p.x for p in model.penalties.values()])
+          '| penalties =', ' '.join(['%.2f' % p.x for p in model.penalties.values()]), \
+          '| primal feasible =', model.primal_feasible()
 
 # Pull objective and variable values out of model
 print 'objective =', model.objVal

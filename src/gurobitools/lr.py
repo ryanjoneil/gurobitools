@@ -5,6 +5,7 @@ class LRModel(ProxyModel):
     def __init__(self, *args, **kwds):
         super(LRModel, self).__init__(*args, **kwds)
 
+        self.dualized_constraints = {}
         self.penalties = {}
         self.multipliers = {}
 
@@ -24,9 +25,10 @@ class LRModel(ProxyModel):
         Adds a dualized constraint to the model. Instead of adding a hard
         constraint, this creates a penalty variable and changes the
         objective function accordingly.
+
+        Returns the equality constraint for the new penalty variable.
         '''
-        # First add a variable.
-        # Bound are determined by the constraint type:
+        # First add a variable. Bounds are determined by constraint type:
         #       <=      penalty >= 0
         #       ==      penalty URS
         #       >=      penalty <= 0
@@ -47,6 +49,9 @@ class LRModel(ProxyModel):
 
         # Save the constraint, penalty variable, and multiplier.
         self.penalties[c] = p
+
+        # Save the original constraint that's being dualized.
+        self.dualized_constraints[c] = temp_constr
         return c
 
     def setObjective(self, expr):
@@ -94,4 +99,44 @@ class LRModel(ProxyModel):
             yield self
 
         self.setObjective(self.default_objective)
+
+    def primal_feasible(self):
+        '''
+        Tests for feasibilty of the current solution against the original
+        dualized constraints within an error of self.epsilon. That is, if the
+        constraints were of the the following forms, they are subject to the
+        corresponding tests:
+
+            expr <= rhs     ->      expr <= rhs + epsilon
+            expr == rhs     ->      rhs - epsilon <= expr <= rhs + epsilon
+            expr >= rhs     ->      expr >= rhs - epsilon
+        '''
+        for pc in self.penalties:
+            # Pull out info on the original constraint.
+            c = self.dualized_constraints[pc]
+            sense = getattr(c, '__sense')
+            lhs = getattr(c, '__lhs')
+            rhs = getattr(c, '__rhs')
+            eps = self.epsilon
+
+            # Convert to numeric values if these are expressions.
+            try:
+                lhs_val = lhs.getValue()
+            except AttributeError:
+                lhs_val = lhs
+
+            try:
+                rhs_val = rhs.getValue()
+            except AttributeError:
+                rhs_val = rhs
+
+            # Test for feasibility.
+            if sense == '<' and lhs_val > rhs_val + eps:
+                return False
+            elif sense == '>' and lhs_val < rhs_val - eps:
+                return False
+            elif lhs_val < rhs_val - eps or lhs_val > rhs_val + eps:
+                return False
+
+        return True
 

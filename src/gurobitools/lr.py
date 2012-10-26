@@ -94,8 +94,12 @@ class LRModel(ProxyModel):
         self.default_objective = expr
 
     def LRoptimize(self, debug=False):
-        # TODO: docs
-
+        '''
+        Iteratively optimizes the dualized model, adjusting penalty
+        multiplier values and step size along the way. This will keep
+        iterating until either max_iterations have been run or both primal
+        feasibility and complementary slackness conditions are met.
+        '''
         # Penalty variables & multipliers are indexed by penalty constraints.
         penalty_cons = self.penalties.keys()
 

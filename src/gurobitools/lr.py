@@ -210,4 +210,3 @@ class LRModel(ProxyModel):
         print '| penalties =', ' '.join(['%.2f' % p.x for p in penalty_vars]),
         print '| primal feasible =', self.primal_feasible(),
         print '| comp. slackness =', self.complementary_slackness()
-

@@ -38,7 +38,7 @@ model.update()
 
 # sum <j> x_ij <= 1 for all i
 for x_i in x:
-    model.addLRConstr(sum(x_i) <= 1)
+    model.addLRConstr(sum(x_i) == 1)
 
 # sum <i> a_ij * x_ij <= b[j] for all j
 for j in range(len(b)):

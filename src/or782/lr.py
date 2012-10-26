@@ -1,3 +1,4 @@
+from gurobipy import GRB
 from or782.model import ProxyModel
 
 class LRModel(ProxyModel):
@@ -34,7 +35,6 @@ class LRModel(ProxyModel):
             p == getattr(temp_constr, '__rhs') - getattr(temp_constr, '__lhs')
         )
         self.update()
-        print dir(c)
 
         # Save the constraint, penalty variable, and multiplier.
         self.penalties[c] = p
@@ -62,12 +62,12 @@ class LRModel(ProxyModel):
             for j, pc in enumerate(penalty_cons):
                 lr_objective = lr_objective + self.multipliers[pc] * self.penalties[pc]
 
-            super(LRModel, slef).setObjective(lr_objective)
+            super(LRModel, self).setObjective(lr_objective)
             super(LRModel, self).optimize()
 
             print 'iteration', i, 'obj =', '%.02f' % self.objVal, '| u =', \
                 ' '.join(['%.02f' % self.multipliers[pc] for pc in penalty_cons]), \
-                '| penalties = ', \
+                '| penalties =', \
                 ' '.join(['%.2f' % self.penalties[pc].x for pc in penalty_cons])
 
             # Only update step size every 100 iterations

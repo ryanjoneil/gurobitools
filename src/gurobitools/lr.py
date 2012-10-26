@@ -110,6 +110,8 @@ class LRModel(ProxyModel):
             expr <= rhs     ->      expr <= rhs + epsilon
             expr == rhs     ->      rhs - epsilon <= expr <= rhs + epsilon
             expr >= rhs     ->      expr >= rhs - epsilon
+
+        Return True if the current solution is primal feasible, False if not.
         '''
         for pc in self.penalties:
             # Pull out info on the original constraint.
@@ -136,6 +138,23 @@ class LRModel(ProxyModel):
             elif sense == '>' and lhs_val < rhs_val - eps:
                 return False
             elif lhs_val < rhs_val - eps or lhs_val > rhs_val + eps:
+                return False
+
+        return True
+
+    def complementary_slackness(self):
+        '''
+        Tests for complementary slackness conditions against the penalty
+        variable values and their associated multipliers. For each pair,
+        these conditions are met if either is with self.epsilon of 0.
+
+        Return True if the current solution meets complementary slackness
+        conditions for all dualized constraints, False otherwise.
+        '''
+        for pc in self.penalties:
+            if abs(self.multipliers[pc]) > self.epsilon:
+                return False
+            elif abs(self.penalties[pc].x) > self.epsilon:
                 return False
 
         return True

@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
-# This is the GAP per Wolsey, pg 182
-
-from gurobipy import GRB
+# This is the GAP per Wolsey.
+from gurobipy import GRB, quicksum as sum
 from gurobitools import LRModel
 
 model = LRModel('GAP per Wolsey')
@@ -33,7 +32,7 @@ for i in range(len(c)):
         x_i.append(model.addVar(vtype=GRB.BINARY))
     x.append(x_i)
 
-# We have to update the model so it knows about new variables
+# We have to update the model so it knows about new variables.
 model.update()
 
 # sum <j> x_ij <= 1 for all i
@@ -52,16 +51,18 @@ model.setObjective(
     )
 )
 
+# Iteratively optimize using the LR model.
 for m in model.LRoptimize():
     penalty_cons = m.penalties.keys()
     multipliers = [m.multipliers[pc] for pc in penalty_cons]
     penalty_vars = [m.penalties[pc] for pc in penalty_cons]
 
-    print 'iteration', m.iteration,
+    print '[%d]' % m.iteration,
     print 'obj =', '%.02f' % m.objVal,
     print '| u =', ' '.join(['%.02f' % u for u in multipliers]),
     print '| penalties =', ' '.join(['%.2f' % p.x for p in penalty_vars]),
-    print '| primal feasible =', m.primal_feasible()
+    print '| primal feasible =', m.primal_feasible(),
+    print '| comp. slackness =', m.complementary_slackness()
 
 # Pull objective and variable values out of model
 print 'objective =', model.objVal

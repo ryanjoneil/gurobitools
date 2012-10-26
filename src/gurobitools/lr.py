@@ -2,6 +2,40 @@ from gurobipy import GRB
 from gurobitools.model import ProxyModel
 
 class LRModel(ProxyModel):
+    '''
+    A Gurobi Model that handles the details of dualizing constraints for
+    Lagrangian Relaxation in integer programs. The following methods are
+    introduced to make this possible:
+
+        - model.addLRConstr(expr): add a dualized constraint to the model
+        - model.LRoptimize(): optimizes the dualized model repeatedly,
+          until either primal feasibility and complementary slackness
+          conditions are met, or a certain number of iterations have passed
+
+    The following attributes are kept on the LRModel instance and available
+    after calling LRModel.optimize. They can be set before the call to change
+    the behavior of the model. Most of the automatically created variables
+    and constraints are indexed by their respective penalty constraints.
+
+        - model.default_multiplier: starting value for multipliers (2.0)
+        - model.start_denominator: starting value for denominator (1.0)
+
+        - model.max_iterations: max # of iterations (default=1000)
+        - model.update_iterations: # of iterations to update step size (10)
+        - model.epsilon: allowable error on termination conditions (10e-6)
+
+    These fields are set and updated during optimization:
+
+        - model.iteration: current iteration number
+        - model.denominator: current denominator for computing step size
+        - model.step_size: current step size
+
+    These fields are filled in by calls to model.addLRConstr:
+
+        - model.dualized_constraints: {penalty constr.: original constr.}
+        - model.penalties: {penalty constr.: penalty variable}
+        - model.multipliers: {penalty constr.: multiplier}
+    '''
     def __init__(self, *args, **kwds):
         super(LRModel, self).__init__(*args, **kwds)
 
@@ -9,7 +43,7 @@ class LRModel(ProxyModel):
         self.penalties = {}
         self.multipliers = {}
 
-        self.max_iterations = 100
+        self.max_iterations = 1000
         self.update_iterations = 10
         self.epsilon = 10e-6
 
@@ -55,14 +89,11 @@ class LRModel(ProxyModel):
         return c
 
     def setObjective(self, expr):
-        '''
-        Adds the normal objective to the model, but includes dualized
-        constraints in the objective function based on their senses.
-        '''
-        self.default_objective = expr
+        # Save the objective for future use.
         super(LRModel, self).setObjective(expr)
+        self.default_objective = expr
 
-    def LRoptimize(self):
+    def LRoptimize(self, debug=False):
         # TODO: docs
 
         # Penalty variables & multipliers are indexed by penalty constraints.
@@ -91,11 +122,12 @@ class LRModel(ProxyModel):
                 self.step_size = 1.0 / self.denominator
                 self.denominator += 1
 
-            yield self
+            if debug:
+                self.print_status()
 
             # Stopping criteria
             if self.primal_feasible() and self.complementary_slackness():
-                raise StopIteration
+                break
 
             # Always update multipliers
             for pc in penalty_cons:
@@ -161,4 +193,17 @@ class LRModel(ProxyModel):
                 return False
 
         return True
+
+    def print_status(self):
+        '''Prints a debugging status message to stdout.'''
+        penalty_cons = self.penalties.keys()
+        multipliers = [self.multipliers[pc] for pc in penalty_cons]
+        penalty_vars = [self.penalties[pc] for pc in penalty_cons]
+
+        print '[%d]' % self.iteration,
+        print 'obj =', '%.02f' % self.objVal,
+        print '| u =', ' '.join(['%.02f' % u for u in multipliers]),
+        print '| penalties =', ' '.join(['%.2f' % p.x for p in penalty_vars]),
+        print '| primal feasible =', self.primal_feasible(),
+        print '| comp. slackness =', self.complementary_slackness()
 

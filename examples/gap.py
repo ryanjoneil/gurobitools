@@ -32,9 +32,6 @@ for i in range(len(c)):
         x_i.append(model.addVar(vtype=GRB.BINARY))
     x.append(x_i)
 
-# We have to update the model so it knows about new variables.
-model.update()
-
 # sum <j> x_ij <= 1 for all i
 for x_i in x:
     model.addLRConstr(sum(x_i) <= 1)
@@ -51,21 +48,13 @@ model.setObjective(
     )
 )
 
-# Iteratively optimize using the LR model.
-for m in model.LRoptimize():
-    penalty_cons = m.penalties.keys()
-    multipliers = [m.multipliers[pc] for pc in penalty_cons]
-    penalty_vars = [m.penalties[pc] for pc in penalty_cons]
-
-    print '[%d]' % m.iteration,
-    print 'obj =', '%.02f' % m.objVal,
-    print '| u =', ' '.join(['%.02f' % u for u in multipliers]),
-    print '| penalties =', ' '.join(['%.2f' % p.x for p in penalty_vars]),
-    print '| primal feasible =', m.primal_feasible(),
-    print '| comp. slackness =', m.complementary_slackness()
+model.LRoptimize(debug=True)
 
 # Pull objective and variable values out of model
-print 'objective =', model.objVal
+print 'Iterations =', model.iteration
+print 'Primal Feasible =', model.primal_feasible()
+print 'Complementary Slackness =', model.complementary_slackness()
+print 'LR Dual Bound =', model.objVal
 print 'x = ['
 for x_i in x:
     print '   ', [1 if x_ij.x >= 0.5 else 0 for x_ij in x_i]

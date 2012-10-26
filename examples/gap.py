@@ -38,7 +38,7 @@ model.update()
 
 # sum <j> x_ij <= 1 for all i
 for x_i in x:
-    model.addLRConstr(sum(x_i) == 1)
+    model.addLRConstr(sum(x_i) <= 1)
 
 # sum <i> a_ij * x_ij <= b[j] for all j
 for j in range(len(b)):
@@ -52,7 +52,7 @@ model.setObjective(
     )
 )
 
-for m in model.optimize():
+for m in model.LRoptimize():
     print 'iteration', model.iteration, 'obj =', '%.02f' % model.objVal, \
           '| u =', ' '.join(['%.02f' % u for u in model.multipliers.values()]), \
           '| penalties =', ' '.join(['%.2f' % p.x for p in model.penalties.values()])

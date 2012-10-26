@@ -18,7 +18,6 @@ class LRModel(ProxyModel):
 
         self.default_multiplier = 2.0
         self.start_denominator = 1.0
-        self.start_step_size = 1.0
 
     def addLRConstr(self, temp_constr):
         '''
@@ -56,8 +55,9 @@ class LRModel(ProxyModel):
         constraints in the objective function based on their senses.
         '''
         self.default_objective = expr
+        super(LRModel, self).setObjective(expr)
 
-    def optimize(self):
+    def LRoptimize(self):
         # TODO: docs
 
         # Penalty variables & multipliers are indexed by penalty constraints.
@@ -66,7 +66,6 @@ class LRModel(ProxyModel):
         # Start values for multipliers and other things.
         self.multipliers = {pc: self.default_multiplier for pc in penalty_cons}
         self.denominator = self.start_denominator
-        self.step_size = self.start_step_size
 
         for i in xrange(self.max_iterations):
             self.iteration = i+1

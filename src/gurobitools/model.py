@@ -58,7 +58,9 @@ def copy_model(model, to_class):
     for c in model.getConstrs():
         mexpr = model.getRow(c)
         expr = mexpr.getConstant()
-        expr += quicksum(c*v for c, v in izip(mexpr.__coeffs, mexpr.__vars))
+        expr += quicksum(
+            c*var_map[v] for c, v in izip(mexpr.__coeffs, mexpr.__vars)
+        )
 
         if expr:
             if c.sense == '<':

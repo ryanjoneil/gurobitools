@@ -56,6 +56,8 @@ def copy_model(model, to_class):
 
     # Add all constraints, constructing expressions for them.
     for c in model.getConstrs():
+        if c.constrName().starswith('c1_'):
+            continue
         mexpr = model.getRow(c)
         expr = mexpr.getConstant()
         expr += quicksum(

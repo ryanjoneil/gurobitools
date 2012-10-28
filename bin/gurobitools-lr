@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-from gurobipy import read, readParams
+from gurobipy import quicksum, read, readParams
 from gurobitools import LRModel
-from gurobitools.model import copy_model
+from itertools import izip
 from optparse import OptionParser
 import re
 
@@ -39,23 +39,70 @@ if __name__ == '__main__':
 
     # Now load the model and dualize all the matching constraints.
     model = read(options.file)
-    lr_model = copy_model(model, LRModel)
+    lr_model = LRModel()
 
-    for c in lr_model.getConstrs():
+    # Add all variables and their bounds.
+    var_map = {}
+    for v in model.getVars():
+        v2 = lr_model.addVar(
+            lb=v.lb, ub=v.ub, obj=v.obj, vtype=v.vtype, name=v.varName
+        )
+        var_map[v] = v2
+
+    lr_model.update()
+
+    # Add or dualize all constraints
+    for c in model.getConstrs():
+        mexpr = model.getRow(c)
+        expr = mexpr.getConstant()
+        expr += quicksum(
+            c*var_map[v] for c, v in izip(mexpr.__coeffs, mexpr.__vars)
+        )
+
+        if expr:
+            if c.sense == '<':
+                ineq = expr <= c.rhs
+            elif c.sense == '>':
+                ineq = expr >= c.rhs
+            else:
+                ineq = expr == c.rhs
+
+        dualized = False
         for c_re in const_re:
             if c_re.match(c.constrName):
-                lr_model.remove(c)
+                lr_model.addLRConstr(ineq)
+                dualized = True
+                break
 
-                # We can't get the original linear expression of the Model,
-                # so we have to reconstruct it to dualize the constraint.
-                # There should be a better way to do this... (?)
-                expr = 0
-                for v in lr_model.getVars():
-                    coeff = lr_model.getCoeff(c, v)
-                    if coeff:
-                        expr += coeff * v
-                if expr:
-                    lr_model.addLRConstr(expr)
+        if not dualized:
+            lr_model.addConstr(ineq)
+
+    # Add the objective function.
+    obj = model.getObjective()
+    expr = obj.getConstant()
+    for i in xrange(obj.size()):
+        v = obj.getVar(i)
+        coeff = obj.getCoeff(i)
+        expr += coeff * var_map[v]
+
+    lr_model.setObjective(expr)
 
     # And optimize.
+    lr_model.modelSense = model.modelSense
+    lr_model.setParam('OutputFlag', False) # turns off solver chatter
     lr_model.LRoptimize(debug=True)
+
+    # Pull objective and variable values out of model
+    print
+    print 'Iterations =', lr_model.iteration
+    print 'Primal Feasible =', lr_model.primal_feasible()
+    print 'Complementary Slackness =', lr_model.complementary_slackness()
+    print 'LR Dual Bound =', lr_model.objVal
+    print
+    print 'Nonzero Variables:'
+
+    # Ignore printing penalty variables
+    penalty_vars = set(lr_model.penalties.values())
+    for v in lr_model.getVars():
+        if v not in penalty_vars and v.x:
+            print v.varName, '=', v.x

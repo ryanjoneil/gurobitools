@@ -9,24 +9,15 @@ import re
 if __name__ == '__main__':
     # Set up command line options.
     parser = OptionParser()
-    parser.add_option(
-        '-f', '--file',
-        dest = 'file',
-        metavar = 'FILE',
-        help = 'model file in LP or MPS format'
+    parser.add_option('-f', '--file', dest='file', metavar='FILE',
+        help='model file in LP or MPS format'
     )
-    parser.add_option(
-        '-c', '--cons',
-        dest = 'cons',
-        metavar = 'CONS',
-        help = 'comma-separated list of constraints regexes ' \
-               'to dualize (examples: -c c1_1,c1,2 or -c c1_.*)'
+    parser.add_option('-c', '--cons', dest='cons', metavar='CONS',
+        help='comma-separated list of constraints regexes ' \
+             'to dualize (examples: -c c1_1,c1,2 or -c c1_.*)'
     )
-    parser.add_option(
-        '-p', '--params',
-        dest = 'params',
-        metavar = 'PARAMS',
-        help = 'Gurobi parameters file (optional)'
+    parser.add_option('-p', '--params', dest='params', metavar='PARAMS',
+        help='Gurobi parameters file (optional)'
     )
 
     # Get and check command line options.
@@ -67,6 +58,4 @@ if __name__ == '__main__':
                     lr_model.addLRConstr(expr)
 
     # And optimize.
-    lr_model.optimize()
-    print lr_model.objVal
-
+    lr_model.LRoptimize(debug=True)

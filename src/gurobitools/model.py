@@ -1,4 +1,5 @@
-from gurobipy import Model
+from gurobipy import Model, quicksum
+from itertools import izip
 
 # I'm not sure exactly why. Maybe it's because Model is written in
 # Cython, or perhaps Gurobi is doing something to error out on invalid
@@ -55,11 +56,9 @@ def copy_model(model, to_class):
 
     # Add all constraints, constructing expressions for them.
     for c in model.getConstrs():
-        expr = 0
-        for v in model.getVars():
-            coeff = model.getCoeff(c, v)
-            if coeff:
-                expr += coeff * var_map[v]
+        mexpr = model.getRow(c)
+        expr = mexpr.getConstant()
+        expr += quicksum(c*v for c, v in izip(mexpr.__coeffs, mexpr.__vars))
 
         if expr:
             if c.sense == '<':

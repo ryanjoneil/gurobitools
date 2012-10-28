@@ -62,17 +62,8 @@ class LRModel(ProxyModel):
 
         Returns the equality constraint for the new penalty variable.
         '''
-        # First add a variable. Bounds are determined by constraint type:
-        #       <=      penalty >= 0
-        #       ==      penalty URS
-        #       >=      penalty <= 0
-        sense = getattr(temp_constr, '__sense')
-        if sense == '<':
-            p = self.addVar(lb=0)
-        elif sense == '>':
-            p = self.addVar(lb=-GRB.INFINITY, ub=0)
-        else:
-            p = self.addVar(lb=-GRB.INFINITY)
+        # First add a variable containing the penalty for this constraint.
+        p = self.addVar(lb=0)
 
         # Now add a new constraint for the value of p.
         self.update()

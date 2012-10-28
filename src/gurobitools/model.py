@@ -39,8 +39,8 @@ class ProxyModel(Model):
 
 def copy_model(model, to_class):
     '''Takes in a Gurobi Model instance and copies it to a subtype.'''
-    # TODO: this only does linear constraints right now..
-    # TODO: there *has* to be a better way to do this
+    # TODO: This only does linear constraints right now..
+    # TODO: There *has* to be a better way to do this.
     m = to_class()
 
     # Add all variables and their bounds.
@@ -78,4 +78,6 @@ def copy_model(model, to_class):
         expr += coeff * var_map[v]
 
     m.setObjective(expr)
+
+    m.modelSense = model.modelSense
     return m

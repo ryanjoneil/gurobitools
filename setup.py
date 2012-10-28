@@ -11,6 +11,7 @@ setup (
 
     package_dir = {'': 'src'},
     packages    = ['gurobitools'],
+    scripts     = ['scripts/gurobitools-lr'],
 
     keywords    = 'operations research integer programming gurobi',
     classifiers = [

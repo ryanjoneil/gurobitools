@@ -63,7 +63,7 @@ class LRModel(ProxyModel):
         Returns the equality constraint for the new penalty variable.
         '''
         # First add a variable containing the penalty for this constraint.
-        p = self.addVar(lb=0)
+        p = self.addVar(lb=-GRB.INFINITY)
 
         # Now add a new constraint for the value of p.
         self.update()
